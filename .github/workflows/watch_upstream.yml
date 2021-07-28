@@ -1,0 +1,46 @@
+name: Get latest upstream version
+
+on:
+  schedule:
+    - cron:  '0 2 * * *'
+  workflow_dispatch:
+
+
+jobs:
+  
+  fetch-and-update:
+  
+    runs-on: ubuntu-latest
+    
+    steps:
+      
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Fetch release version
+        id: fetch
+        run: |
+          curl -sL https://api.github.com/repos/Frodo45127/rpfm/releases/latest | \
+          jq -r ".tag_name" > latest.txt
+          echo "::set-output name=tag::$(cat latest.txt)"
+      
+      - name: Check for modified files
+        id: git-check
+        run: echo ::set-output name=modified::$([ -z "`git status --porcelain`" ] && echo "false" || echo "true")
+      
+      - name: Commit latest release version
+        if: steps.git-check.outputs.modified == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "${{steps.fetch.outputs.tag}}"
+          git tag -a "${{steps.fetch.outputs.tag}}" -m "Release ${{steps.fetch.outputs.tag}}"
+          
+      - name: Push changes
+        if: steps.git-check.outputs.modified == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          tags: true
