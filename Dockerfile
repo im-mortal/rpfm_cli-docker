@@ -1,6 +1,6 @@
-FROM rust:1.40 as builder
+FROM rust:latest as builder
 
-ENV VERSION=v2.5.3
+ARG VERSION=master
 
 WORKDIR /usr/src/app
 
@@ -14,14 +14,18 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN git clone -b ${VERSION} --recursive --depth 1 https://github.com/Frodo45127/rpfm.git \
     && cd rpfm \
-    && cargo build --verbose --bin rpfm_cli \
-    && ls -Ashl \
-    && cargo test --verbose
-
+    && mkdir /build \
+    && cargo build --verbose --bin rpfm_cli  --target-dir /build
 
 FROM debian:buster-slim
-COPY --from=builder /usr/src/app /app
+
+RUN apt-get update \
+    && apt-get install -y openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/debug/rpfm_cli /app/
 
 WORKDIR /app
+ENV PATH="/app:${PATH}"
 
-CMD ["rpfm-cli"]
+ENTRYPOINT ["rpfm_cli"]
