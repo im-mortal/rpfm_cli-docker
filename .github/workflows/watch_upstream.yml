@@ -9,7 +9,7 @@ env:
   api: https://api.github.com
   registry: ghcr.io
   upstream: Frodo45127/rpfm
-  extra_branches: "[ 'develop' ]"
+  extra_branches: [ 'develop' ]
 
 jobs:
 
@@ -23,17 +23,19 @@ jobs:
       - name: Get default branch
         id: get-branches
         run: >
-          curl -sL ${{ env.api }}/repos/${{ env.upstream }}
-          | jq -rc '[ '.default_branch' ]'
+          echo "${{ fromJSON(curl -sL ${{ env.api }}/repos/${{ env.upstream }}).default_branch }}"
           > default_branch.json
+
+          echo "$(cat default_branch.json)"
 
           echo "::set-output name=default-branch:$(
           cat default_branch.json
           )"
 
-          echo "${{ env.extra_branches }}"
-          | jq -c '.'
+          echo "${{ fromJSON(env.extra_branches) }}"
           > extra_branches.json
+
+          echo "$(cat extra_branches)"
 
           echo "::set-output name=branches::$(
           (cat default_branch.json ; cat extra_branches.json)
