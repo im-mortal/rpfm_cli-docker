@@ -25,7 +25,7 @@ jobs:
         run: >
           REPO="$(curl -sL ${{ env.api }}/repos/${{ env.upstream }})"
 
-          echo "${{ fromJSON(${REPO}).default_branch }}"
+          echo "${{ fromJSON($(echo $REPO)).default_branch }}"
           > default_branch.json
 
           echo "$(cat default_branch.json)"
@@ -134,8 +134,8 @@ jobs:
     steps:
 
       - run: >
-          echo "::group::Building tag ${{ needs.fetch.steps.upstream.outputs.latest-tag }}"
-          echo "Commit: ${{ needs.fetch.steps.upstream.outputs.latest-tag-sha }}"
+          echo "::group::Building tag ${{ needs.fetch.outputs.latest-tag }}"
+          echo "Commit: ${{ needs.fetch.outputs.latest-tag-sha }}"
           echo "Branch: ${{ needs.get-branches.outputs.default-branch }}"
           echo "::endgroup::"
 
@@ -144,7 +144,7 @@ jobs:
         with:
           token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
           event-type: trigger-ci
-          client-payload: '{ "ref": "${{ needs.fetch.steps.upstream.outputs.latest-tag }}", "sha": "${{ needs.fetch.steps.upstream.outputs.latest-tag-sha }}", "branch": "${{ needs.get-branches.outputs.default-branch }}" }'
+          client-payload: '{ "ref": "${{ needs.fetch.outputs.latest-tag }}", "sha": "${{ needs.fetch.outputs.latest-tag-sha }}", "branch": "${{ needs.get-branches.outputs.default-branch }}" }'
 
 
   branches:
