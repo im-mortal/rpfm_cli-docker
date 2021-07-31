@@ -9,7 +9,7 @@ env:
   api: https://api.github.com
   registry: ghcr.io
   upstream: Frodo45127/rpfm
-  extra_branches: [ 'develop' ]
+  extra_branches: "[ 'develop' ]"
 
 jobs:
 
