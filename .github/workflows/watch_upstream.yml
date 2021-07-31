@@ -24,7 +24,7 @@ jobs:
         id: get-branches
         run: >
           curl -sL ${{ env.api }}/repos/${{ env.upstream }}
-          | jq -rc '[ '.default_branch' ]'
+          | jq -c "[ '.default_branch' ]"
           > default_branch.json
 
           echo "::set-output name=default-branch:$(
@@ -32,7 +32,7 @@ jobs:
           )"
 
           echo ${{ env.extra_branches }}
-          | jq -rc '.'
+          | jq -c '.'
           > extra_branches.json
 
           echo "::set-output name=branches::$(
