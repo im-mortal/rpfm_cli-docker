@@ -31,7 +31,7 @@ jobs:
           cat default_branch.json
           )"
 
-          echo ${{ env.extra_branches }}
+          echo "${{ env.extra_branches }}"
           | jq -c '.'
           > extra_branches.json
 
