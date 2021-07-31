@@ -23,7 +23,9 @@ jobs:
       - name: Get default branch
         id: get-branches
         run: >
-          echo "${{ fromJSON(curl -sL ${{ env.api }}/repos/${{ env.upstream }}).default_branch }}"
+          REPO="$(curl -sL ${{ env.api }}/repos/${{ env.upstream }})"
+
+          echo "${{ fromJSON(${REPO}).default_branch }}"
           > default_branch.json
 
           echo "$(cat default_branch.json)"
