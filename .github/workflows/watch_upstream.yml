@@ -1,4 +1,4 @@
-name: Get latest upstream version
+name: Fetch upstream
 
 on:
   schedule:
@@ -6,72 +6,85 @@ on:
   workflow_dispatch:
 
 env:
-  git_name: github-actions[bot]
-  git_email: 41898282+github-actions[bot]@users.noreply.github.com
   api: https://api.github.com
   registry: ghcr.io
   upstream: Frodo45127/rpfm
+  extra_branches: [ "develop" ]
 
 jobs:
-  
-  fetch-and-update:
-  
+
+  get-branches:
+
     runs-on: ubuntu-latest
-    
+    outputs:
+      default-branch: ${{ steps.get-branches.outputs.default-branch }}
+      branches: ${{ steps.get-branches.outputs.branches }}
     steps:
-      
-      - uses: actions/checkout@v2
-        with:
-          token: ${{ github.token }}
-          fetch-depth: 0
-        
+      - name: Get default branch
+        id: get-branches
+        run: >
+          curl -sL ${{ env.api }}/repos/${{ env.upstream }}
+          | jq -rc '[ '.default_branch' ]'
+          > default_branch.json
+
+          echo "::set-output name=default-branch:$(
+          cat default_branch.json
+          )"
+
+          echo ${{ env.extra_branches }}
+          | jq -rc '.'
+          > extra_branches.json
+
+          echo "::set-output name=branches::$(
+          (cat default_branch.json ; cat extra_branches.json)
+          | jq -rc '. + input'
+          ")
+
+  fetch:
+
+    needs: get-branches
+    runs-on: ubuntu-latest
+
+    outputs:
+      repository-name: ${{ steps.init.outputs.repository-name }}
+      built-tags: ${{ steps.facts.outputs.built-tags }}
+      latest-tag: ${{ steps.upstream.outputs.latest-tag }}
+      latest-tag-normalized: ${{ steps.tag.outputs.normalized-tag }}
+      latest-tag-sha: ${{ steps.upstream.outputs.latest-tag-sha }}
+    steps:
+
       - name: Init
         id: init
         run: >
-          echo "::set-output name=repository_name::$(
+          echo "::set-output name=repository-name::$(
           echo '${{ github.repository }}'
           | awk -F '/' '{print $2}'
           )"
-          
-          git config --global user.name "${{ env.git_name }}"
-          
-          git config --global user.email "${{ env.git_email }}"
-      
+
       - name: Get info
         id: facts
         run: >
-          echo "::set-output name=branch::$(
-          curl -sL ${{ env.api }}/repos/${{ env.upstream }}
-          | jq -r '.default_branch'
-          )"
-          
-          echo "::set-output name=built_tags::$(
+          echo "::set-output name=built-tags::$(
           curl -sL --fail
           --header 'Accept: application/vnd.github.v3+json'
           -u ${{ github.actor }}:${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
           'https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions'
-          | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
+          | jq -rc '[ .[].metadata.container '.tags[]' ]'
           )"
-      
+
       - name: Fetch upstream
         id: upstream
         run: >
-          echo "::set-output name=tag::$(
+          echo "::set-output name=latest-tag::$(
           curl -sL
           ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
-          | jq -r '.tag_name'
+          | jq -rc '.tag_name'
           )"
-          
-          echo "::set-output name=tag_sha::$(
+
+          echo "::set-output name=latest-tag-sha::$(
           curl -sL
           ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
-          | jq -r '.target_commitish'
-          )"
-          
-          echo "::set-output name=sha::$(
-          curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
-          | jq -r '.sha'
+          | jq -rc '.target_commitish'
           )"
 
       - name: Extract metadata (tags, labels) for Docker
@@ -81,38 +94,88 @@ jobs:
           images: ${{ env.registry }}/${{ github.repository }}
           tags: |
             type=semver,priority=900,pattern={{version}},value=${{ steps.upstream.outputs.tag }}
-            
-      - id: tag
+
+      - name: Get normalized tag name
+        id: tag
         run: |
-          echo "::set-output name=normalized_tag::${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
-          
+          echo "::set-output name=normalized-tag::${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
+
       - name: Gathered facts
         run: |
-          echo "Branch: ${{ steps.facts.outputs.branch }}"
-          echo "Latest tag: ${{ steps.upstream.outputs.tag }}"
-          echo "Latest tag SHA: ${{ steps.upstream.outputs.tag_sha }}"
-          echo "Latest commit SHA: ${{ steps.upstream.outputs.sha }}"
+          echo "::group::Watched branches"
+          echo "${{ toJSON(needs.get-branches.outputs.branches) }}"
+          echo "::endgroup::"
+          echo "Latest tag: ${{ steps.upstream.outputs.latest-tag }}"
+          echo "Latest tag SHA: ${{ steps.upstream.outputs.latest-tag-sha }}"
+          echo "Latest commit SHA: ${{ steps.upstream.outputs.latest-sha }}"
           echo "::group::Existing tags for ghcr.io/${{ github.repository }}"
-          echo "$(echo ${{ steps.facts.outputs.built_tags }} | jq -r)"
+          echo "${{ toJSON(steps.facts.outputs.built_tags) }}"
           echo "::endgroup::"
           echo "Running Build Tag task?"
           echo "${{ ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag ) }}"
           echo "Running Build Branch task?"
           echo "${{ ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha ) }}"
-          
-          
-      - name: Repository Dispatch — Build Tag
-        if: ${{ ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag ) }}
-        uses: peter-evans/repository-dispatch@v1.1.3
-        with:
-          token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
-          event-type: trigger-ci
-          client-payload: '{ "ref": "${{ steps.upstream.outputs.tag }}", "sha": "${{ steps.upstream.outputs.tag_sha }}", "branch": "${{ steps.facts.outputs.branch }}" }'
 
-      - name: Repository Dispatch - Build Branch
-        if: ${{ ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha ) }}
+
+  tags:
+
+    runs-on: ubuntu-latest
+    needs: [fetch, get-branches]
+    if: >
+      ${{ ! contains(
+      fromJSON(needs.fetch.outputs.built-tags),
+      needs.fetch.outputs.latest-tag-normalized
+      ) }}
+
+    steps:
+
+      - run: >
+          echo "::group::Building tag ${{ needs.fetch.steps.upstream.outputs.latest-tag }}"
+          echo "Commit: ${{ needs.fetch.steps.upstream.outputs.latest-tag-sha }}"
+          echo "Branch: ${{ needs.get-branches.outputs.default-branch }}"
+          echo "::endgroup::"
+
+      - name: Repository Dispatch — Build Tag
         uses: peter-evans/repository-dispatch@v1.1.3
         with:
           token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
           event-type: trigger-ci
-          client-payload: '{ "ref": "${{ steps.facts.outputs.branch }}", "sha": "${{ steps.upstream.outputs.sha }}", "branch": "${{ steps.facts.outputs.branch }}" }'
+          client-payload: '{ "ref": "${{ needs.fetch.steps.upstream.outputs.latest-tag }}", "sha": "${{ needs.fetch.steps.upstream.outputs.latest-tag-sha }}", "branch": "${{ needs.get-branches.outputs.default-branch }}" }'
+
+
+  branches:
+
+    runs-on: ubuntu-latest
+    needs: [fetch, get-branches]
+    strategy:
+      matrix:
+        branch: ${{ fromJSON(needs.get-branches.outputs.branches) }}
+
+    steps:
+
+      - name: Fetch upstream
+        id: upstream
+        run: >
+          echo "::set-output name=latest-sha::$(
+          curl -sL
+          "${{ env.api }}/repos/${{ env.upstream }}/commits/${{ matrix.branch }}"
+          | jq -rc '.sha'
+          )"
+
+      - run: >
+          echo "Commit: ${{ steps.upstream.outputs.latest-sha }}"
+          echo "Branch: ${{ matrix.branch }}"
+          echo "Building?"
+          echo ${{ ! contains( fromJSON(needs.fetch.outputs.built-tags), steps.upstream.outputs.latest-sha ) }}
+
+      - name: Repository Dispatch — Build Branch
+        if: >
+          ${{ ! contains(
+          fromJSON(needs.fetch.outputs.built-tags),
+          steps.upstream.outputs.latest-sha
+          ) }}
+        uses: peter-evans/repository-dispatch@v1.1.3
+        with:
+          token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
+          event-type: trigger-ci
+          client-payload: '{ "ref": "${{ matrix.branch }}", "sha": "${{ steps.upstream.outputs.latest-sha }}", "branch": "${{ matrix.branch }}" }'
