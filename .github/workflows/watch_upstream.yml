@@ -24,7 +24,7 @@ jobs:
         id: get-branches
         run: >
           curl -sL ${{ env.api }}/repos/${{ env.upstream }}
-          | jq -c '[ .default_branch | tojson ]'
+          | jq -rc '[ '.default_branch' ]'
           > default_branch.json
 
           echo "::set-output name=default-branch:$(
