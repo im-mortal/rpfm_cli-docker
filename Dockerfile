@@ -15,6 +15,9 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN git clone -b ${VERSION} --recursive --depth 1 https://github.com/Frodo45127/rpfm.git \
     && cd rpfm \
+    && sed -i \
+       's/debug = true//gm' \
+       Cargo.toml \
     && mkdir /build \
     && cargo build \
        --verbose \
