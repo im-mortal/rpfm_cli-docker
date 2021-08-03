@@ -78,13 +78,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.4.1
         with:
+          github-token: ${{ github.token }}
           images: ${{ env.registry }}/${{ github.repository }}
           tags: |
             type=semver,priority=900,pattern={{version}},value=${{ steps.upstream.outputs.tag }}
             
       - id: tag
         run: |
-          echo "::set-output name=normalized_tag::${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
+          echo "::set-output name=normalized_tag::${{ 
+              fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version']
+            }}"
           
       - name: Gathered facts
         run: |
@@ -96,9 +99,11 @@ jobs:
           echo "$(echo ${{ steps.facts.outputs.built_tags }} | jq -r)"
           echo "::endgroup::"
           echo "Running Build Tag task?"
-          echo "${{ ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag ) }}"
+          echo "${{ ! contains( steps.facts.outputs.built_tags,
+            steps.tag.outputs.normalized_tag ) }}"
           echo "Running Build Branch task?"
-          echo "${{ ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha ) }}"
+          echo "${{ ! contains( steps.facts.outputs.built_tags,
+            steps.upstream.outputs.sha ) }}"
           
           
       - name: Repository Dispatch — Build Tag
@@ -107,7 +112,13 @@ jobs:
         with:
           token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
           event-type: trigger-ci
-          client-payload: '{ "ref": "${{ steps.upstream.outputs.tag }}", "sha": "${{ steps.upstream.outputs.tag_sha }}", "branch": "${{ steps.facts.outputs.branch }}" }'
+          client-payload: >
+            {
+            "profile": "release",
+            "ref": "${{ steps.upstream.outputs.tag }}",
+            "sha": "${{ steps.upstream.outputs.tag_sha }}",
+            "branch": "${{ steps.facts.outputs.branch }}"
+            }
 
       - name: Repository Dispatch - Build Branch
         if: ${{ ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha ) }}
@@ -115,4 +126,10 @@ jobs:
         with:
           token: ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
           event-type: trigger-ci
-          client-payload: '{ "ref": "${{ steps.facts.outputs.branch }}", "sha": "${{ steps.upstream.outputs.sha }}", "branch": "${{ steps.facts.outputs.branch }}" }'
+          client-payload: >
+            {
+            "profile": "debug",
+            "ref": "${{ steps.facts.outputs.branch }}",
+            "sha": "${{ steps.upstream.outputs.sha }}",
+            "branch": "${{ steps.facts.outputs.branch }}"
+            }
