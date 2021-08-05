@@ -30,7 +30,7 @@ FROM debian:buster-slim
 ARG PROFILE=debug
 
 RUN apt-get update \
-    && apt-get install -y openssl \
+    && apt-get install -y libssl1.1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/${PROFILE}/rpfm_cli /app/
