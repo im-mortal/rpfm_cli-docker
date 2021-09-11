@@ -39,56 +39,56 @@ jobs:
       
       - name: Get info
         id: facts
-        run: >
+        run: |
           type=$(
-          curl -sL --fail
-          --header 'Accept: application/vnd.github.v3+json'
-          -u ${{ github.actor }}:${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
-          'https://api.github.com/users/${{ github.actor }}'
-          | jq -r -c '.type'
+            curl -sL --fail \
+              --header 'Accept: application/vnd.github.v3+json' \
+              -u ${{ github.actor }}:${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }} \
+              'https://api.github.com/users/${{ github.actor }}'
+            | jq -r -c '.type'
           )
 
           case $type in
-          User)
-          type="users"
-          ;;
-          Organization)
-          type="orgs"
-          ;;
+            User)
+              type="users"
+              ;;
+            Organization)
+              type="orgs"
+              ;;
           esac
 
           echo "::set-output name=branch::$(
-          curl -sL ${{ env.api }}/repos/${{ env.upstream }}
-          | jq -r '.default_branch'
+            curl -sL ${{ env.api }}/repos/${{ env.upstream }}
+            | jq -r '.default_branch'
           )"
-          
+
           echo "::set-output name=built_tags::$(
-          curl -sL --fail
-          --header 'Accept: application/vnd.github.v3+json'
-          -u ${{ github.actor }}:${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}
-          'https://api.github.com/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions'
-          | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
+            curl -sL --fail
+              --header 'Accept: application/vnd.github.v3+json' \
+              -u ${{ github.actor }}:${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }} \
+              'https://api.github.com/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions'
+            | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
           )"
       
       - name: Fetch upstream
         id: upstream
-        run: >
+        run: |
           echo "::set-output name=tag::$(
-          curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
-          | jq -r '.tag_name'
+            curl -sL \
+              ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
+            | jq -r '.tag_name'
           )"
           
           echo "::set-output name=tag_sha::$(
-          curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
-          | jq -r '.target_commitish'
+            curl -sL \
+              ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
+            | jq -r '.target_commitish'
           )"
           
           echo "::set-output name=sha::$(
-          curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
-          | jq -r '.sha'
+            curl -sL \
+              ${{ env.api }}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.default_branch }}
+            | jq -r '.sha'
           )"
 
       - name: Extract metadata (tags, labels) for Docker
@@ -121,7 +121,6 @@ jobs:
           echo "Running Build Branch task?"
           echo "${{ ! contains( steps.facts.outputs.built_tags,
             steps.upstream.outputs.sha ) }}"
-          
           
       - name: Repository Dispatch — Build Tag
         if: ${{ ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag ) }}
