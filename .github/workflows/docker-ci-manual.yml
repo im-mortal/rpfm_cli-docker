@@ -15,6 +15,12 @@ on:
           Leave "debug" for an unoptimized profile.
         required: true
         default: 'debug'
+      upstream:
+        description: |
+          RPFM upstream repo.
+          Default: https://github.com/Frodo45127/rpfm.git
+        required: false
+        default: 'https://github.com/Frodo45127/rpfm.git'
           
 
 env:
@@ -96,3 +102,4 @@ jobs:
         build-args: |
           VERSION=${{ github.event.inputs.tag }}
           PROFILE=${{ github.event.inputs.profile }}
+          UPSTREAM=${{ github.event.inputs.upstream }}
