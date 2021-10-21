@@ -39,6 +39,23 @@ jobs:
       - name: Get info
         id: facts
         run: >
+          type=$(
+          curl -sL --fail
+          --header 'Accept: application/vnd.github.v3+json'
+          -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }}
+          'https://api.github.com/users/${{ github.actor }}'
+          | jq -r -c '.type'
+          )
+
+          case $type in
+          User)
+          type="users"
+          ;;
+          Organization)
+          type="orgs"
+          ;;
+          esac
+
           echo "::set-output name=branch::$(
           curl -sL ${GITHUB_API_URL}/repos/${{ env.upstream }}
           | jq -r '.default_branch'
@@ -48,7 +65,7 @@ jobs:
           curl -sL --fail
           --header 'Accept: application/vnd.github.v3+json'
           -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }}
-          'https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions'
+          'https://api.github.com/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions'
           | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
           )"
       
