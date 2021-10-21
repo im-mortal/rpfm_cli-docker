@@ -8,7 +8,6 @@ on:
 env:
   git_name: github-actions[bot]
   git_email: 41898282+github-actions[bot]@users.noreply.github.com
-  api: https://api.github.com
   registry: ghcr.io
   upstream: Frodo45127/rpfm
 
@@ -41,7 +40,7 @@ jobs:
         id: facts
         run: >
           echo "::set-output name=branch::$(
-          curl -sL ${{ env.api }}/repos/${{ env.upstream }}
+          curl -sL ${GITHUB_API_URL}/repos/${{ env.upstream }}
           | jq -r '.default_branch'
           )"
           
@@ -56,22 +55,26 @@ jobs:
       - name: Fetch upstream
         id: upstream
         run: >
-          echo "::set-output name=tag::$(
+          response_releases_latest=$(
           curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
-          | jq -r '.tag_name'
+          ${GITHUB_API_URL}/repos/${{ env.upstream }}/releases/latest
+          )
+
+          echo "::set-output name=tag::$(
+          jq -r '.tag_name' <<< ${response_releases_latest}
           )"
           
           echo "::set-output name=tag_sha::$(
-          curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/releases/latest
-          | jq -r '.target_commitish'
+          jq -r '.target_commitish' <<< ${response_releases_latest}
           )"
           
-          echo "::set-output name=sha::$(
+          response_commits_branch=$(
           curl -sL
-          ${{ env.api }}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
-          | jq -r '.sha'
+          ${GITHUB_API_URL}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
+          )
+
+          echo "::set-output name=sha::$(
+          jq -r '.sha' <<< ${response_commits_branch}
           )"
 
       - name: Extract metadata (tags, labels) for Docker
