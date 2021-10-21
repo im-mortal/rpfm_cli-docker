@@ -26,72 +26,71 @@ jobs:
         
       - name: Init
         id: init
-        run: >
+        run: |
           echo "::set-output name=repository_name::$(
-          echo '${{ github.repository }}'
-          | awk -F '/' '{print $2}'
+            echo '${{ github.repository }}' \
+            | awk -F '/' '{print $2}'
           )"
           
           git config --global user.name "${{ env.git_name }}"
-          
           git config --global user.email "${{ env.git_email }}"
       
       - name: Get info
         id: facts
-        run: >
+        run: |
           type=$(
-          curl -sL --fail
-          --header 'Accept: application/vnd.github.v3+json'
-          -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }}
-          'https://api.github.com/users/${{ github.actor }}'
-          | jq -r -c '.type'
+            curl -sL --fail \
+              --header 'Accept: application/vnd.github.v3+json' \
+              -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
+              'https://api.github.com/users/${{ github.actor }}' \
+            | jq -r -c '.type'
           )
 
           case $type in
-          User)
-          type="users"
-          ;;
-          Organization)
-          type="orgs"
-          ;;
+            User)
+              type="users"
+              ;;
+            Organization)
+              type="orgs"
+              ;;
           esac
 
           echo "::set-output name=branch::$(
-          curl -sL ${GITHUB_API_URL}/repos/${{ env.upstream }}
-          | jq -r '.default_branch'
+            curl -sL ${GITHUB_API_URL}/repos/${{ env.upstream }} \
+            | jq -r '.default_branch'
           )"
           
           echo "::set-output name=built_tags::$(
-          curl -sL --fail
-          --header 'Accept: application/vnd.github.v3+json'
-          -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }}
-          'https://api.github.com/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions'
-          | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
+            curl -sL --fail \
+              --header 'Accept: application/vnd.github.v3+json' \
+              -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
+              'https://api.github.com/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions' \
+            | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
           )"
       
       - name: Fetch upstream
         id: upstream
-        run: >
+        run: |
           response_releases_latest=$(
-          curl -sL
-          ${GITHUB_API_URL}/repos/${{ env.upstream }}/releases/latest
+            curl -sL \
+            ${GITHUB_API_URL}/repos/${{ env.upstream }}/releases/latest
           )
 
           echo "::set-output name=tag::$(
-          jq -r '.tag_name' <<< ${response_releases_latest}
+            jq -r '.tag_name' <<< ${response_releases_latest}
           )"
           
           echo "::set-output name=tag_sha::$(
-          jq -r '.target_commitish' <<< ${response_releases_latest}
+            jq -r '.target_commitish' <<< ${response_releases_latest}
           )"
           
           response_commits_branch=$(
-          curl -sL
-          ${GITHUB_API_URL}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
+            curl -sL \
+              ${GITHUB_API_URL}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
           )
 
           echo "::set-output name=sha::$(
-          jq -r '.sha' <<< ${response_commits_branch}
+            jq -r '.sha' <<< ${response_commits_branch}
           )"
 
       - name: Extract metadata (tags, labels) for Docker
