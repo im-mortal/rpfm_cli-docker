@@ -120,7 +120,8 @@ jobs:
             "profile": "release",
             "ref": "${{ steps.upstream.outputs.tag }}",
             "sha": "${{ steps.upstream.outputs.tag_sha }}",
-            "branch": "${{ steps.facts.outputs.branch }}"
+            "branch": "${{ steps.facts.outputs.branch }}",
+            "upstream": "${GITHUB_SERVER_URL}/${{ env.upstream }}.git"
             }
 
       - name: Repository Dispatch - Build Branch
@@ -134,5 +135,6 @@ jobs:
             "profile": "debug",
             "ref": "${{ steps.facts.outputs.branch }}",
             "sha": "${{ steps.upstream.outputs.sha }}",
-            "branch": "${{ steps.facts.outputs.branch }}"
+            "branch": "${{ steps.facts.outputs.branch }}",
+            "upstream": "${GITHUB_SERVER_URL}/${{ env.upstream }}.git"
             }

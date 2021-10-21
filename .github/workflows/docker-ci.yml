@@ -75,4 +75,5 @@ jobs:
         build-args: |
           VERSION=${{ github.event.client_payload.ref }}
           PROFILE=${{ github.event.client_payload.profile }}
+          UPSTREAM=${{ github.event.client_payload.upstream }}
 
