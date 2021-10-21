@@ -42,7 +42,7 @@ jobs:
             curl -sL --fail \
               --header 'Accept: application/vnd.github.v3+json' \
               -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
-              'https://api.github.com/users/${{ github.actor }}' \
+              "${GITHUB_API_URL}/users/${{ github.actor }}" \
             | jq -r -c '.type'
           )
 
@@ -64,7 +64,7 @@ jobs:
             curl -sL --fail \
               --header 'Accept: application/vnd.github.v3+json' \
               -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
-              'https://api.github.com/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions' \
+              "${GITHUB_API_URL}/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions" \
             | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
           )"
       
@@ -137,7 +137,7 @@ jobs:
             "ref": "${{ steps.upstream.outputs.tag }}",
             "sha": "${{ steps.upstream.outputs.tag_sha }}",
             "branch": "${{ steps.facts.outputs.branch }}",
-            "upstream": "${GITHUB_SERVER_URL}/${{ env.upstream }}.git"
+            "upstream": "${{ github.server_url }}/${{ env.upstream }}.git"
             }
 
       - name: Repository Dispatch - Build Branch
@@ -152,5 +152,5 @@ jobs:
             "ref": "${{ steps.facts.outputs.branch }}",
             "sha": "${{ steps.upstream.outputs.sha }}",
             "branch": "${{ steps.facts.outputs.branch }}",
-            "upstream": "${GITHUB_SERVER_URL}/${{ env.upstream }}.git"
+            "upstream": "${{ github.server_url }}/${{ env.upstream }}.git"
             }
