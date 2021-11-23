@@ -4,6 +4,11 @@ on:
   schedule:
     - cron:  '0 5,17 * * *'
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: Force build containers?
+        default: "false"
+        required: false
 
 env:
   git_name: github-actions[bot]
@@ -126,7 +131,7 @@ jobs:
           
           
       - name: Repository Dispatch — Build Tag
-        if: ${{ ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag ) }}
+        if: github.event.inputs.force_build == 'true' || ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag )
         uses: peter-evans/repository-dispatch@v1.1.3
         with:
           token: ${{ secrets.BOT_TOKEN }}
@@ -141,7 +146,7 @@ jobs:
             }
 
       - name: Repository Dispatch - Build Branch
-        if: ${{ ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha ) }}
+        if: github.event.inputs.force_build == 'true' || ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha )
         uses: peter-evans/repository-dispatch@v1.1.3
         with:
           token: ${{ secrets.BOT_TOKEN }}

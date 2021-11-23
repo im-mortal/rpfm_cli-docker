@@ -1,3 +1,5 @@
+ARG BASE_IMAGE=debian:bullseye-slim
+
 FROM rust:latest as builder
 
 ARG VERSION=master
@@ -31,8 +33,7 @@ RUN git clone \
        --target-dir /build \
        $( [ "${PROFILE}" == "release" ] && echo "--${PROFILE}" )
 
-ARG BASE_IMAGE=debian:bullseye-slim
-FROM $BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG PROFILE=debug
 ARG APP=/app
