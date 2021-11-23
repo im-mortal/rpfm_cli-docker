@@ -31,7 +31,8 @@ RUN git clone \
        --target-dir /build \
        $( [ "${PROFILE}" == "release" ] && echo "--${PROFILE}" )
 
-FROM debian:bullseye-slim
+ARG BASE_IMAGE=debian:bullseye-slim
+FROM $BASE_IMAGE
 
 ARG PROFILE=debug
 ARG APP=/app
