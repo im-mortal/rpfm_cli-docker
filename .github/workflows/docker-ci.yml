@@ -8,6 +8,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DEFAULT_BASE_IMAGE: debian:bullseye-slim
 
 jobs:
   build-and-push:
@@ -32,8 +33,8 @@ jobs:
         id: info
         run: |
           echo "::set-output name=repo::$(echo ${GITHUB_REPOSITORY#*/})"
-          echo "::set-output name=image::$(tr ':' '_' <<< '${{ matrix.base_image }}')"
-          echo "::set-output name=default_image::debian:bullseye-slim)"
+          echo "::set-output name=base_image::$(tr ':' '_' <<< '${{ matrix.base_image }}')"
+          echo "::set-output name=default_image::$(tr ':' '_' <<< '${{ env.DEFAULT_BASE_IMAGE }}')"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1.6.0
@@ -47,7 +48,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        if: matrix.base_image == steps.info.outputs.default_image
+        if: steps.info.outputs.base_image == steps.info.outputs.default_image
         uses: docker/metadata-action@v3.6.0
         with:
           images: |
@@ -61,18 +62,18 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta2
-        if: matrix.base_image != steps.info.outputs.default_image
+        if: steps.info.outputs.base_image != steps.info.outputs.default_image
         uses: docker/metadata-action@v3.6.0
         with:
           images: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.info.outputs.repo }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,priority=900,value=${{ steps.info.outputs.image }}
-            type=raw,priority=800,value=${{ steps.info.outputs.image }}-latest
-            type=raw,priority=500,value=${{ steps.info.outputs.image }}-SHA${{ github.event.client_payload.sha }}
-            type=raw,priority=400,value=${{ github.event.client_payload.ref }}-${{ steps.info.outputs.image }}
-            type=raw,priority=300,value=${{ github.event.client_payload.ref }}-${{ steps.info.outputs.image }}-SHA${{ github.event.client_payload.sha }}
+            type=raw,priority=900,value=${{ steps.info.outputs.base_image }}
+            type=raw,priority=800,value=${{ steps.info.outputs.base_image }}-latest
+            type=raw,priority=500,value=${{ steps.info.outputs.base_image }}-SHA${{ github.event.client_payload.sha }}
+            type=raw,priority=400,value=${{ github.event.client_payload.ref }}-${{ steps.info.outputs.base_image }}
+            type=raw,priority=300,value=${{ github.event.client_payload.ref }}-${{ steps.info.outputs.base_image }}-SHA${{ github.event.client_payload.sha }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@v1.10.0
