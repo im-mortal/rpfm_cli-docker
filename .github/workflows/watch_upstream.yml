@@ -132,7 +132,7 @@ jobs:
           
       - name: Repository Dispatch — Build Tag
         if: github.event.inputs.force_build == 'true' || ! contains( steps.facts.outputs.built_tags, steps.tag.outputs.normalized_tag )
-        uses: peter-evans/repository-dispatch@v1.1.3
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.BOT_TOKEN }}
           event-type: trigger-ci
@@ -147,7 +147,7 @@ jobs:
 
       - name: Repository Dispatch - Build Branch
         if: github.event.inputs.force_build == 'true' || ! contains( steps.facts.outputs.built_tags, steps.upstream.outputs.sha )
-        uses: peter-evans/repository-dispatch@v1.1.3
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.BOT_TOKEN }}
           event-type: trigger-ci
