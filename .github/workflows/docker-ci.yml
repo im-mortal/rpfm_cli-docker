@@ -100,3 +100,4 @@ jobs:
             PROFILE=${{ github.event.client_payload.profile }}
             UPSTREAM=${{ github.event.client_payload.upstream }}
             BASE_IMAGE=${{ matrix.base_image }}
+            RUNTIME_DEPS=${{ github.event.client_payload.runtime_deps }}
