@@ -21,6 +21,12 @@ on:
           Default: https://github.com/Frodo45127/rpfm.git
         required: false
         default: 'https://github.com/Frodo45127/rpfm.git'
+      runtime_deps:
+        description: |
+          Runtime dependencies (as apt packages, space-delimited)
+          Default: libssl1.1
+        default: 'libssl1.1'
+        required: false
           
 
 env:
@@ -103,3 +109,4 @@ jobs:
           VERSION=${{ github.event.inputs.tag }}
           PROFILE=${{ github.event.inputs.profile }}
           UPSTREAM=${{ github.event.inputs.upstream }}
+          RUNTIME_DEPS=${{ github.event.inputs.runtime_deps }}

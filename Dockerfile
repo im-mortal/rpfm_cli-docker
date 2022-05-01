@@ -37,6 +37,7 @@ FROM ${BASE_IMAGE}
 
 ARG PROFILE=debug
 ARG APP=/app
+ARG RUNTIME_DEPS=libssl1.1
 
 ENV APP_USER=rpfm
 
@@ -44,7 +45,7 @@ RUN groupadd ${APP_USER} \
  && useradd -g ${APP_USER} ${APP_USER} \
  && mkdir -p ${APP} \
  && apt-get update \
- && apt-get install -y libssl1.1 \
+ && apt-get install -y ${RUNTIME_DEPS} \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
