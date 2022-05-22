@@ -15,7 +15,6 @@ env:
   git_email: 41898282+github-actions[bot]@users.noreply.github.com
   registry: ghcr.io
   upstream: Frodo45127/rpfm
-  runtime_deps: libssl1.1
 
 jobs:
   
@@ -158,6 +157,5 @@ jobs:
             "ref": "${{ steps.facts.outputs.branch }}",
             "sha": "${{ steps.upstream.outputs.sha }}",
             "branch": "${{ steps.facts.outputs.branch }}",
-            "upstream": "${{ github.server_url }}/${{ env.upstream }}.git",
-            "runtime_deps": "${{ env.runtime_deps }}"
+            "upstream": "${{ github.server_url }}/${{ env.upstream }}.git"
             }
