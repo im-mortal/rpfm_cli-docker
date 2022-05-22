@@ -88,6 +88,17 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set runtime dependencies
+        id: runtime_deps
+        run: |
+          # libssl
+          if [ '${{ matrix.base_image }}' == 'ubuntu:latest' ]; then
+            dep=libssl3
+          else
+            dep=libssl1.1
+          fi
+          echo "runtime_deps=${dep}" >> $GITHUB_ENV
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v2.10.0
         with:
@@ -100,4 +111,4 @@ jobs:
             PROFILE=${{ github.event.client_payload.profile }}
             UPSTREAM=${{ github.event.client_payload.upstream }}
             BASE_IMAGE=${{ matrix.base_image }}
-            RUNTIME_DEPS=${{ github.event.client_payload.runtime_deps }}
+            RUNTIME_DEPS=${{ env.runtime_deps }}
