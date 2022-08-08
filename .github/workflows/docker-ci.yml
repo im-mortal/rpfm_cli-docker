@@ -100,7 +100,7 @@ jobs:
           echo "runtime_deps=${dep}" >> $GITHUB_ENV
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3.1.0
+        uses: docker/build-push-action@v3.1.1
         with:
           context: .
           push: true
