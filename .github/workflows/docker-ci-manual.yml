@@ -78,7 +78,8 @@ jobs:
           type=semver,pattern={{version}},priority=900,value=${{ github.event.inputs.tag }}
           type=edge,priority=700,branch=${{ github.event.inputs.tag }}
           type=match,pattern=master,group=0,value=${{ github.event.inputs.tag }}
-          type=raw,value=${{ steps.repo.outputs.sha }}
+          type=raw,value=${{ github.event.inputs.tag }}
+          type=raw,value=SHA${{ steps.repo.outputs.sha }}
     
     - name: Checkout local repository
       uses: actions/checkout@v3
