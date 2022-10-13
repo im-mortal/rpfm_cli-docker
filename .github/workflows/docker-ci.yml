@@ -37,7 +37,7 @@ jobs:
           echo "::set-output name=default_image::$(tr ':' '_' <<< '${{ env.DEFAULT_BASE_IMAGE }}')"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2.0.0
+        uses: docker/setup-buildx-action@v2.1.0
         id: buildx
         with:
           install: true
