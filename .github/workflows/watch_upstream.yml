@@ -32,10 +32,10 @@ jobs:
       - name: Init
         id: init
         run: |
-          echo "::set-output name=repository_name::$(
+          echo "repository_name=$(
             echo '${{ github.repository }}' \
             | awk -F '/' '{print $2}'
-          )"
+          )" >> $GITHUB_OUTPUT
           
           git config --global user.name "${{ env.git_name }}"
           git config --global user.email "${{ env.git_email }}"
@@ -60,18 +60,18 @@ jobs:
               ;;
           esac
 
-          echo "::set-output name=branch::$(
+          echo "branch=$(
             curl -sL ${GITHUB_API_URL}/repos/${{ env.upstream }} \
             | jq -r '.default_branch'
-          )"
+          )" >> $GITHUB_OUTPUT
           
-          echo "::set-output name=built_tags::$(
+          echo "built_tags=$(
             curl -sL --fail \
               --header 'Accept: application/vnd.github.v3+json' \
               -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
               "${GITHUB_API_URL}/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions" \
             | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
-          )"
+          )" >> $GITHUB_OUTPUT
       
       - name: Fetch upstream
         id: upstream
@@ -81,22 +81,22 @@ jobs:
             ${GITHUB_API_URL}/repos/${{ env.upstream }}/releases/latest
           )
 
-          echo "::set-output name=tag::$(
+          echo "tag=$(
             jq -r '.tag_name' <<< ${response_releases_latest}
-          )"
+          )" >> $GITHUB_OUTPUT
           
-          echo "::set-output name=tag_sha::$(
+          echo "tag_sha=$(
             jq -r '.target_commitish' <<< ${response_releases_latest}
-          )"
+          )" >> $GITHUB_OUTPUT
           
           response_commits_branch=$(
             curl -sL \
               ${GITHUB_API_URL}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
           )
 
-          echo "::set-output name=sha::$(
+          echo "sha=$(
             jq -r '.sha' <<< ${response_commits_branch}
-          )"
+          )" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -109,9 +109,9 @@ jobs:
             
       - id: tag
         run: |
-          echo "::set-output name=normalized_tag::${{ 
+          echo "normalized_tag=${{ 
               fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version']
-            }}"
+            }}" >> $GITHUB_OUTPUT
           
       - name: Gathered facts
         run: |

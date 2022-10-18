@@ -64,8 +64,8 @@ jobs:
     - name: Get info
       id: repo
       run: |
-        echo "::set-output name=name::$(echo ${GITHUB_REPOSITORY#*/})"
-        echo "::set-output name=sha::$(git rev-parse --verify ${{ github.event.inputs.tag }})"
+        echo "name=$(echo ${GITHUB_REPOSITORY#*/})" >> $GITHUB_OUTPUT
+        echo "sha=$(git rev-parse --verify ${{ github.event.inputs.tag }})" >> $GITHUB_OUTPUT
         
     - name: Extract metadata (tags, labels) for Docker
       id: meta

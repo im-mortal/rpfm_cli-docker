@@ -32,9 +32,9 @@ jobs:
       - name: Get info
         id: info
         run: |
-          echo "::set-output name=repo::$(echo ${GITHUB_REPOSITORY#*/})"
-          echo "::set-output name=base_image::$(tr ':' '_' <<< '${{ matrix.base_image }}')"
-          echo "::set-output name=default_image::$(tr ':' '_' <<< '${{ env.DEFAULT_BASE_IMAGE }}')"
+          echo "repo=$(echo ${GITHUB_REPOSITORY#*/})" >> $GITHUB_OUTPUT
+          echo "base_image=$(tr ':' '_' <<< '${{ matrix.base_image }}')" >> $GITHUB_OUTPUT
+          echo "default_image=$(tr ':' '_' <<< '${{ env.DEFAULT_BASE_IMAGE }}')" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2.2.0
