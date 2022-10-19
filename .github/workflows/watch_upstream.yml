@@ -71,7 +71,7 @@ jobs:
             gh api \
               --header 'Accept: application/vnd.github.v3+json' \
               "/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions" \
-              --jq '[ .[].metadata.container.tags[] | tojson ]'
+              --jq '[ .[].metadata.container.tags[] | select(test("^\\d+\\.\\d.")) | tojson ]'
           )" >> $GITHUB_OUTPUT
       
       - name: Fetch upstream
