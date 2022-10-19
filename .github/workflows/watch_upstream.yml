@@ -42,13 +42,14 @@ jobs:
       
       - name: Get info
         id: facts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           type=$(
-            curl -sL --fail \
+            gh api \
               --header 'Accept: application/vnd.github.v3+json' \
-              -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
-              "${GITHUB_API_URL}/users/${{ github.actor }}" \
-            | jq -r -c '.type'
+              "/users/${{ github.actor }}" \
+              --jq '.type'
           )
 
           case $type in
@@ -61,24 +62,26 @@ jobs:
           esac
 
           echo "branch=$(
-            curl -sL ${GITHUB_API_URL}/repos/${{ env.upstream }} \
-            | jq -r '.default_branch'
+            gh api \
+              "/repos/${{ env.upstream }}" \
+              --jq '.default_branch'
           )" >> $GITHUB_OUTPUT
           
           echo "built_tags=$(
-            curl -sL --fail \
+            gh api \
               --header 'Accept: application/vnd.github.v3+json' \
-              -u ${{ github.actor }}:${{ secrets.BOT_TOKEN }} \
-              "${GITHUB_API_URL}/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions" \
-            | jq -r -c '[ .[].metadata.container.tags[] | tojson ]'
+              "/${type}/${{ github.repository_owner }}/packages/container/${{ steps.init.outputs.repository_name }}/versions" \
+              --jq '[ .[].metadata.container.tags[] | tojson ]'
           )" >> $GITHUB_OUTPUT
       
       - name: Fetch upstream
         id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           response_releases_latest=$(
-            curl -sL \
-            ${GITHUB_API_URL}/repos/${{ env.upstream }}/releases/latest
+            gh api \
+            "/repos/${{ env.upstream }}/releases/latest"
           )
 
           echo "tag=$(
@@ -88,14 +91,11 @@ jobs:
           echo "tag_sha=$(
             jq -r '.target_commitish' <<< ${response_releases_latest}
           )" >> $GITHUB_OUTPUT
-          
-          response_commits_branch=$(
-            curl -sL \
-              ${GITHUB_API_URL}/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}
-          )
 
           echo "sha=$(
-            jq -r '.sha' <<< ${response_commits_branch}
+            gh api \
+              "/repos/${{ env.upstream }}/commits/${{ steps.facts.outputs.branch }}" \
+              --jq '.sha'
           )" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
