@@ -23,7 +23,7 @@ inputs:
       required: false
     subcommand:
       description: |
-        rpfm_cli suncommand to use. Can be one of the following:
+        rpfm_cli subcommand to use. Can be one of the following:
           anim-pack
           dependencies
           help
@@ -35,7 +35,7 @@ inputs:
       required: true
 runs:
   using: docker
-  image: docker://ghcr.io/warhammer-mods/rpfm_cli-docker:v4_rework
+  image: docker://ghcr.io/warhammer-mods/rpfm_cli-docker:develop
   entrypoint: /bin/bash
   args:
     - -c
